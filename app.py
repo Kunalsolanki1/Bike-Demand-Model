@@ -7,6 +7,8 @@ import joblib
 import pandas as pd
 import streamlit as st
 
+st.set_page_config(page_title="Bike Demand Assistant", page_icon="🚲", layout="wide")
+
 # Resolve paths relative to this file so Streamlit Cloud and local runs behave alike.
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, "bike_model.joblib")
@@ -110,7 +112,7 @@ Do not invent missing values. For example, "8 AM" means hour 8 and
 Question: {question}
 """
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-3.8-flash",
             contents=prompt,
             config={"response_mime_type": "application/json"},
         )
@@ -172,7 +174,6 @@ except Exception as exc:
     st.error(f"Could not load the model or replay data: {exc}")
     st.stop()
 
-st.set_page_config(page_title="Bike Demand Assistant", page_icon="🚲", layout="wide")
 st.title("Bike Demand Assistant")
 st.caption("Historical demand replay and scenario exploration · Capital Bikeshare 2012")
 
