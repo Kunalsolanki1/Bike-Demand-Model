@@ -1,6 +1,6 @@
-# Python version for deployment: 3.11
+# Deploy with Python 3.11 (select this in Streamlit Community Cloud advanced settings)
 streamlit==1.66.1
-numpy==1.26.4
+numpy==2.3.5
 pandas==2.2.3
 joblib==1.4.2
 scikit-learn==1.6.1
