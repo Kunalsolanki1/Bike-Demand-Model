@@ -66,24 +66,29 @@ def read_api_key() -> str:
 
 
 def parse_explicit_date(question: str):
-    """Parse only explicit dates; relative dates are not meaningful in a 2012 replay."""
+    """Parse only explicit calendar dates; relative dates do not apply to a 2012 replay."""
     text = re.sub(r"(\d{1,2})(st|nd|rd|th)", r"\1", question, flags=re.IGNORECASE)
 
-    iso_match = re.search(r"\b(2012-\d{2}-\d{2})\b", text)
+    iso_match = re.search(r"\b(2011|2012)-\d{2}-\d{2}\b", text)
     if iso_match:
-        return datetime.strptime(iso_match.group(1), "%Y-%m-%d").date().isoformat()
+        return datetime.strptime(iso_match.group(0), "%Y-%m-%d").date().isoformat()
 
-    formats = (
-        "%d %B %Y",
-        "%B %d %Y",
-        "%d %b %Y",
-        "%b %d %Y",
+    month_names = (
+        "January|February|March|April|May|June|July|August|September|October|November|December|"
+        "Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec"
     )
-    for fmt in formats:
-        for candidate in re.findall(r"[A-Za-z0-9, -]+", text):
+    patterns = [
+        (rf"\b\d{{1,2}}\s+(?:{month_names})\s+(?:2011|2012)\b", ("%d %B %Y", "%d %b %Y")),
+        (rf"\b(?:{month_names})\s+\d{{1,2}},?\s+(?:2011|2012)\b", ("%B %d %Y", "%b %d %Y")),
+    ]
+    for pattern, formats in patterns:
+        match = re.search(pattern, text, flags=re.IGNORECASE)
+        if not match:
+            continue
+        candidate = match.group(0).replace(",", "")
+        for fmt in formats:
             try:
-                parsed = datetime.strptime(candidate.strip().replace(",", ""), fmt)
-                return parsed.date().isoformat()
+                return datetime.strptime(candidate, fmt).date().isoformat()
             except ValueError:
                 continue
     return None
@@ -296,7 +301,7 @@ with header_left:
     )
 with header_right:
     if api_key:
-        st.success("Gemini enabled")
+        st.success("Gemini key configured")
     else:
         st.warning("Local parser mode")
 
@@ -318,7 +323,7 @@ with st.sidebar:
     st.divider()
     st.markdown("**Example questions**")
     st.code("How many bikes should we prepare at 8 AM if it rains?")
-    st.code("Compare 8 AM and 5 PM on 20 December 2012.")
+    st.code("Estimate demand at 5 PM on 20 December 2012.")
     st.code("What is the demand at 17:00 for a 45-minute trip?")
     st.caption(
         "Without Gemini, the local parser supports explicit dates, common time "
@@ -339,6 +344,11 @@ if submitted:
             raise ValueError("Enter a question before submitting.")
 
         intent = parse_question(question.strip(), api_key)
+        if re.search(r"\b(today|tomorrow|yesterday|next week|next month|next monday|this weekend)\b", question, flags=re.IGNORECASE):
+            st.warning(
+                "Relative dates are not supported because this prototype replays 2012 data. "
+                "The selected historical date will be used unless you provide an explicit date."
+            )
         requested_date = (
             datetime.strptime(intent["date"], "%Y-%m-%d").date()
             if intent["date"] else selected_date
