@@ -313,11 +313,11 @@ st.info(
 
 with st.sidebar:
     st.header("Replay settings")
-    selected_date = st.date_input(
-        "Default historical date",
-        value=default_date,
-        min_value=minimum_date,
-        max_value=maximum_date,
+    selected_date_text = st.text_input(
+        "Default historical date (YYYY-MM-DD)",
+        value=default_date.isoformat(),
+        max_chars=10,
+        help="Enter a date between the available replay dates shown below.",
     )
     st.caption(f"Available dates: {minimum_date} to {maximum_date}")
     st.divider()
@@ -344,6 +344,15 @@ if submitted:
             raise ValueError("Enter a question before submitting.")
 
         intent = parse_question(question.strip(), api_key)
+        try:
+            selected_date = datetime.strptime(selected_date_text.strip(), "%Y-%m-%d").date()
+        except ValueError as exc:
+            raise ValueError("Enter the sidebar date in YYYY-MM-DD format, for example 2012-12-20.") from exc
+        if not minimum_date <= selected_date <= maximum_date:
+            raise ValueError(
+                f"Choose a date between {minimum_date.isoformat()} and {maximum_date.isoformat()}."
+            )
+
         if re.search(r"\b(today|tomorrow|yesterday|next week|next month|next monday|this weekend)\b", question, flags=re.IGNORECASE):
             st.warning(
                 "Relative dates are not supported because this prototype replays 2012 data. "
