@@ -34,6 +34,10 @@ The dataset contains citywide rental counts, not station-level inventory or fail
 
 These are the analysis results in the notebook and case solution. They are not a guarantee of performance in other seasons or future years.
 
+## App theme
+
+The Streamlit theme is defined in `.streamlit/config.toml`. It uses a light slate background with a teal primary accent and a softly tinted sidebar. Streamlit Community Cloud reads this configuration from the repository automatically; no API secret or manual dashboard setting is needed for the theme.
+
 ## Streamlit prototype behaviour
 
 The app is a **historical replay and weather what-if prototype**, not a live future forecasting service.
