@@ -1,6 +1,7 @@
-streamlit
+# Python version for deployment: 3.11
+streamlit==1.66.1
+numpy==1.26.4
+pandas==2.2.3
+joblib==1.4.2
 scikit-learn==1.6.1
-pandas
-joblib
-numpy
-google-genai
+google-genai==2.34.0
