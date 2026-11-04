@@ -397,20 +397,20 @@ if submitted:
         if intent["weather"]:
             st.write(
                 f"At **{selected_hour:02d}:00** on **{requested_date:%d %B %Y}**, "
-                f"the model estimates **{baseline_rentals:,.0f rentals** under recorded "
-                f"weather and **{scenario_rentals:,.0f rentals** under the "
+                f"the model estimates **{baseline_rentals:,.0f} rentals** under recorded "
+                f"weather and **{scenario_rentals:,.0f} rentals** under the "
                 f"**{intent['weather']} scenario**."
             )
         else:
             st.write(
                 f"At **{selected_hour:02d}:00** on **{requested_date:%d %B %Y}**, "
-                f"the model estimates **{scenario_rentals:,.0f rentals** under recorded weather."
+                f"the model estimates **{scenario_rentals:,.0f} rentals** under recorded weather."
             )
 
         st.write(
             f"With an assumed average trip duration of **{trip_min} minutes**, "
-            f"estimated concurrent bikes in use are about **{estimated_in_use:,.0f**. "
-            f"The upper-demand scenario corresponds to approximately **{upper_in_use:,.0f** "
+            f"estimated concurrent bikes in use are about **{estimated_in_use:,.0f}**. "
+            f"The upper-demand scenario corresponds to approximately **{upper_in_use:,.0f}** "
             "concurrent bikes."
         )
         st.caption(
