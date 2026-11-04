@@ -216,41 +216,60 @@ if st.button("Analyse demand", type="primary"):
             )
             day_value = selected_date
 
-        daily = forecast_replay_day(day_value, intent.get("weather"))
+        baseline_day = forecast_replay_day(day_value, None)
+        scenario_day = forecast_replay_day(day_value, intent.get("weather"))
         hour_value = intent.get("hour")
         if hour_value is None:
-            hour_value = int(daily["expected"].idxmax().hour)
+            hour_value = int(baseline_day["expected"].idxmax().hour)
         if not 0 <= int(hour_value) <= 23:
             raise ValueError("Hour must be between 0 and 23.")
 
-        row = daily.loc[daily.index.hour == int(hour_value)]
-        if row.empty:
+        baseline_rows = baseline_day.loc[baseline_day.index.hour == int(hour_value)]
+        scenario_rows = scenario_day.loc[scenario_day.index.hour == int(hour_value)]
+        if baseline_rows.empty or scenario_rows.empty:
             raise ValueError("No observation exists for the selected hour.")
-        result = row.iloc[0]
+        baseline_result = baseline_rows.iloc[0]
+        scenario_result = scenario_rows.iloc[0]
         trip_min = int(intent.get("trip_min") or 30)
         if not 1 <= trip_min <= 240:
             raise ValueError("Trip duration must be between 1 and 240 minutes.")
 
         st.caption(f"Parser: {intent['parser']} · Scenario: {intent.get('weather') or 'recorded weather'}")
         c1, c2, c3 = st.columns(3)
-        c1.metric("Expected hourly rentals", f"{result.expected:.0f}")
-        c2.metric("Calibrated upper-demand estimate", f"{result.upper_estimate:.0f}")
+        c1.metric("Baseline rentals", f"{baseline_result.expected:.0f}")
+        c2.metric(
+            f"{intent.get('weather') or 'Scenario'} rentals",
+            f"{scenario_result.expected:.0f}",
+            delta=f"{scenario_result.expected - baseline_result.expected:+.0f}" if intent.get("weather") else None,
+        )
         c3.metric(
             "Estimated concurrent bikes in use",
-            f"{result.expected * trip_min / 60:.0f}",
-            help="Approximation: hourly rentals × assumed average trip duration in hours.",
+            f"{scenario_result.expected * trip_min / 60:.0f}",
+            help="Approximation: scenario hourly rentals × assumed average trip duration in hours.",
         )
 
         st.write(
             f"For **{day_value:%d %b %Y} at {int(hour_value):02d}:00**, "
-            f"the model estimates **{result.expected:.0f} rentals**. "
-            f"The calibrated upper-demand estimate is **{result.upper_estimate:.0f} rentals**. "
-            f"Assuming a {trip_min}-minute average trip, estimated concurrent bikes in use "
-            f"are approximately **{result.expected * trip_min / 60:.0f}** "
-            f"(upper scenario: **{result.upper_estimate * trip_min / 60:.0f}**)."
+            f"the baseline model estimate is **{baseline_result.expected:.0f} rentals**. "
+            + (
+                f"Under the **{intent['weather']} scenario**, the estimate is "
+                f"**{scenario_result.expected:.0f} rentals**. "
+                if intent.get("weather") else
+                f"The estimate under recorded weather is **{scenario_result.expected:.0f} rentals**. "
+            )
+            + f"The calibrated upper-demand estimate for this scenario is "
+            f"**{scenario_result.upper_estimate:.0f} rentals**. "
+            + f"Assuming a {trip_min}-minute average trip, estimated concurrent bikes in use "
+            f"are approximately **{scenario_result.expected * trip_min / 60:.0f}** "
+            f"(upper scenario: **{scenario_result.upper_estimate * trip_min / 60:.0f}**)."
         )
-        st.write(f"Actual historical rentals for this hour: **{result.cnt:.0f}**.")
-        st.line_chart(daily[["expected", "upper_estimate"]])
+        st.write(f"Actual historical rentals for this hour: **{scenario_result.cnt:.0f}**.")
+        plot = pd.DataFrame({
+            "Baseline": baseline_day["expected"],
+            "Scenario": scenario_day["expected"],
+            "Scenario upper estimate": scenario_day["upper_estimate"],
+        }, index=scenario_day.index)
+        st.line_chart(plot)
         st.caption(
             "The upper-demand estimate is a calibrated model output, not a guaranteed "
             "95% interval. Concurrent use is not total fleet size. Station availability, "
